@@ -1,0 +1,36 @@
+spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/emfo
+    username: root
+    password: emfo!@0717
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: never
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        show_sql: true
+        format_sql: true
+        use_sql_comments: true
+        hbm2ddl:
+          auto: update
+        default_batch_fetch_size: 1000
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            loggerLevel: full
+            connectTimeout: 5000
+            readTimeout: 5000
+
+
+logging:
+  level:
+    root: INFO
+    feign: DEBUG
+    org.springframework.cloud.openfeign: DEBUG
+    kr.co.emfo.kpro_test.domain.api.client.KkoEmfoApiClient: DEBUG
+    org.springframework.web.client.RestTemplate: DEBUG
