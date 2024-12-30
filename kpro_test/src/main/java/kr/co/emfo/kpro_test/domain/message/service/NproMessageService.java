@@ -1,7 +1,7 @@
 package kr.co.emfo.kpro_test.domain.message.service;
 
-import kr.co.emfo.kpro_test.domain.api.client.EmfoApiClient;
-import kr.co.emfo.kpro_test.domain.api.dto.emfoRequest;
+import kr.co.emfo.kpro_test.domain.api.client.NproApiClient;
+import kr.co.emfo.kpro_test.domain.api.dto.NproApiRequest;
 import kr.co.emfo.kpro_test.domain.message.converter.MessageConverter;
 import kr.co.emfo.kpro_test.domain.message.entity.NproMessage;
 import kr.co.emfo.kpro_test.domain.message.repository.NproMessageRepository;
@@ -24,7 +24,7 @@ public class NproMessageService {
     private final NproMessageRepository nproMessageRepository;
 
     @Autowired
-    private final EmfoApiClient emfoApiClient;
+    private final NproApiClient nproApiClient;
 
     @Scheduled(fixedDelay = 10000)
     @Transactional
@@ -39,10 +39,9 @@ public class NproMessageService {
 
                 nproMessage.updateState("0");
                 nproMessageRepository.saveAndFlush(nproMessage);
-                System.out.println("★★★★★★★★★★★★★★★★★★★★★★★★★★★★1");
-                emfoRequest.SendMessageDto request = MessageConverter.toEmfoSendMessageDto(nproMessage);
+                NproApiRequest.SendNproMessageRequestDto request = MessageConverter.toSendNproMessageRequestDto(nproMessage);
 
-                String response = emfoApiClient.sendMessage(
+                String response = nproApiClient.sendNproMessage(
                         Long.valueOf(SerialNumberUtil.generateSerialNumber()),
                         request.getMId(),
                         PwdUtil.pwdMd5(request.getMPwd()),
@@ -64,7 +63,6 @@ public class NproMessageService {
                         request.getFlagDeny(),
                         request.getFlagMerge()
                 );
-                System.out.println("★★★★★★★★★★★★★★★★★★★★★★★★★★★★2");
 
                 nproMessage.updateState("2");
                 nproMessageRepository.saveAndFlush(nproMessage);
@@ -81,12 +79,12 @@ public class NproMessageService {
 
     public void getLogs(Long mIdx, String mId) {
 
-        emfoRequest.LogDto request = emfoRequest.LogDto.builder()
+        NproApiRequest.NproLogRequestDto request = NproApiRequest.NproLogRequestDto.builder()
                 .mIdx(mIdx)
                 .mId(mId)
                 .build();
 
-        String logs = emfoApiClient.getLogNpro(request);
+        String logs = nproApiClient.getNproLog(request);
         System.out.println(logs);
     }
 }

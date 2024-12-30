@@ -5,6 +5,9 @@ import java.security.NoSuchAlgorithmException;
 
 public class PwdUtil {
 
+    /**
+     *  패스워드 MD5 암호화 메서드
+     */
     public static String pwdMd5(String input) {
         try {
 

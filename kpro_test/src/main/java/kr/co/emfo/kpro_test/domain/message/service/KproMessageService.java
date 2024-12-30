@@ -3,8 +3,8 @@ package kr.co.emfo.kpro_test.domain.message.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import kr.co.emfo.kpro_test.domain.api.client.KkoEmfoApiClient;
-import kr.co.emfo.kpro_test.domain.api.dto.KkoEmfoRequest;
+import kr.co.emfo.kpro_test.domain.api.client.KproApiClient;
+import kr.co.emfo.kpro_test.domain.api.dto.KproApiRequest;
 import kr.co.emfo.kpro_test.domain.message.converter.MessageConverter;
 import kr.co.emfo.kpro_test.domain.message.entity.Message;
 import kr.co.emfo.kpro_test.domain.message.entity.MessageLog;
@@ -22,13 +22,13 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class MessageService {
+public class KproMessageService {
 
     private final MessageRepository messageRepository;
     private final MessageLogRepository messageLogRepository;
 
     @Autowired
-    private final KkoEmfoApiClient kkoEmfoApiClient;
+    private final KproApiClient kproApiClient;
     @Autowired
     private final ObjectMapper objectMapper;
 
@@ -43,12 +43,12 @@ public class MessageService {
                 messageRepository.saveAndFlush(message);
 
                 // message -> requestDto 변환
-                KkoEmfoRequest.SendMessageDto request = MessageConverter.toSendMessageDto(message);
+                KproApiRequest.SendKproMessageRequestDto request = MessageConverter.toSendMessageDto(message);
 
-                List<KkoEmfoRequest.SendMessageDto> requestList = new ArrayList<>();
+                List<KproApiRequest.SendKproMessageRequestDto> requestList = new ArrayList<>();
                 requestList.add(request);
 
-                String response = kkoEmfoApiClient.sendMessage(requestList);
+                String response = kproApiClient.sendKproMessage(requestList);
 
                 message.updateCurState('2');
                 messageRepository.saveAndFlush(message);
@@ -119,14 +119,14 @@ public class MessageService {
     }
 
     public String getLog(Long i) {
-        String logs = kkoEmfoApiClient.getLog(i);
+        String logs = kproApiClient.getKproLog(i);
         System.out.println(logs);
 
         return logs;
     }
 
     public void getLogs() {
-        String logs = kkoEmfoApiClient.getLogs();
+        String logs = kproApiClient.getKproLogs();
         System.out.println(logs);
     }
 }

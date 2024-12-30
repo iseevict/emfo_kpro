@@ -1,19 +1,18 @@
 package kr.co.emfo.kpro_test.domain.api.client;
 
-import kr.co.emfo.kpro_test.domain.api.dto.emfoRequest;
-import kr.co.emfo.kpro_test.global.config.EmfoClientConfig;
+import kr.co.emfo.kpro_test.domain.api.dto.NproApiRequest;
+import kr.co.emfo.kpro_test.global.config.FeignClientConfig;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 
-@FeignClient(name = "emfoClient", url = "http://emfohttp.co.kr", configuration = EmfoClientConfig.class)
-public interface EmfoApiClient {
+@FeignClient(name = "NproApiClient", url = "http://emfohttp.co.kr", configuration = FeignClientConfig.class)
+public interface NproApiClient {
 
     @PostMapping(value = "/send/send.emfo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    String sendMessage(@RequestPart("m_idx") Long mIdx,
+    String sendNproMessage(@RequestPart("m_idx") Long mIdx,
                        @RequestPart("m_id") String mId,
                        @RequestPart("m_pwd") String mPwd,
                        @RequestPart("call_to") String callTo,
@@ -35,5 +34,5 @@ public interface EmfoApiClient {
                        @RequestPart("flag_merge") String flagMerge);
 
     @GetMapping("/result_log")
-    String getLogNpro(emfoRequest.LogDto request);
+    String getNproLog(NproApiRequest.NproLogRequestDto request);
 }

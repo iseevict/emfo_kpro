@@ -1,8 +1,8 @@
 package kr.co.emfo.kpro_test.domain.message.converter;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import kr.co.emfo.kpro_test.domain.api.dto.KkoEmfoRequest;
-import kr.co.emfo.kpro_test.domain.api.dto.emfoRequest;
+import kr.co.emfo.kpro_test.domain.api.dto.KproApiRequest;
+import kr.co.emfo.kpro_test.domain.api.dto.NproApiRequest;
 import kr.co.emfo.kpro_test.domain.message.entity.Message;
 import kr.co.emfo.kpro_test.domain.message.entity.MessageLog;
 import kr.co.emfo.kpro_test.domain.message.entity.NproMessage;
@@ -12,9 +12,9 @@ import java.time.format.DateTimeFormatter;
 
 public class MessageConverter {
 
-    public static emfoRequest.SendMessageDto toEmfoSendMessageDto(NproMessage nproMessage) {
+    public static NproApiRequest.SendNproMessageRequestDto toSendNproMessageRequestDto(NproMessage nproMessage) {
 
-        return emfoRequest.SendMessageDto.builder()
+        return NproApiRequest.SendNproMessageRequestDto.builder()
                 .mIdx(nproMessage.getMIdx())
                 .mId(nproMessage.getMId())
                 .mPwd(nproMessage.getMPwd())
@@ -38,9 +38,9 @@ public class MessageConverter {
                 .build();
     }
 
-    public static KkoEmfoRequest.SendMessageDto toSendMessageDto(Message message) {
+    public static KproApiRequest.SendKproMessageRequestDto toSendMessageDto(Message message) {
 
-        return KkoEmfoRequest.SendMessageDto.builder()
+        return KproApiRequest.SendKproMessageRequestDto.builder()
                 .callback(message.getCallback())
                 .phone(message.getPhone())
                 .senderKey(message.getSenderKey())

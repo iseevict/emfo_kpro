@@ -12,10 +12,10 @@ import org.springframework.context.annotation.Configuration;
 public class SwaggerConfig {
 
     @Bean
-    public OpenAPI KproAPI() {
+    public OpenAPI EmfoAPI() {
         Info info = new Info()
-                .title("KPRO API")
-                .description("KPRO API 명세서")
+                .title("EMFO API")
+                .description("EMFO API 명세서")
                 .version("1.0.0");
 
         String HEADER_NAME = "EMFO";

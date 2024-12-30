@@ -8,10 +8,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @EnableFeignClients
 @EnableScheduling
-public class KproTestApplication {
+public class EmfoApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(KproTestApplication.class, args);
+		SpringApplication.run(EmfoApplication.class, args);
 	}
 
 }

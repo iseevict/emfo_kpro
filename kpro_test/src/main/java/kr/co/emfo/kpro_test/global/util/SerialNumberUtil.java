@@ -6,6 +6,9 @@ import java.util.Random;
 
 public class SerialNumberUtil {
 
+    /**
+     *  현재 시간 기준으로 17Byte 랜덤 일련번호 생성 메서드
+     */
     public static String generateSerialNumber() {
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmssSSS");

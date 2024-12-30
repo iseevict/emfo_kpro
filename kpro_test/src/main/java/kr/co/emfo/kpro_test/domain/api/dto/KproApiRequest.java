@@ -8,7 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-public class KkoEmfoRequest {
+public class KproApiRequest {
 
     @Getter
     @Builder
@@ -16,7 +16,7 @@ public class KkoEmfoRequest {
     @AllArgsConstructor
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    public static class SendMessageDto {
+    public static class SendKproMessageRequestDto {
         private String callback;
         private String phone;
         private String senderKey;

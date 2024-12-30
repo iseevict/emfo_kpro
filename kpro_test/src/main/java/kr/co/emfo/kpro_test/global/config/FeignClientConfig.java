@@ -5,7 +5,9 @@ import feign.RequestInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.converter.StringHttpMessageConverter;
 
+import java.nio.charset.Charset;
 import java.util.Base64;
 
 @Configuration
@@ -18,7 +20,7 @@ public class FeignClientConfig {
     public RequestInterceptor requestInterceptor() {
 
         return requestTemplate -> {
-            if (!requestTemplate.url().contains("/send/send.emfo")) {
+            if (!requestTemplate.url().contains("/send/send.emfo")) { // Kpro 용
                 String username = "emfoplus_kpro";
                 String password = "emfo!@0717";
                 String credentials = username + ":" + password;
@@ -29,14 +31,19 @@ public class FeignClientConfig {
                 requestTemplate.header("Content-Type", "application/json");
                 requestTemplate.header("Accept", "application/json");
             }
-            else {
+            else { // Npro2 용
                 requestTemplate.header("Content-Type", "multipart/form-data; charset=EUC-KR");
                 requestTemplate.header("Accept-Charset", "EUC-KR");
-                requestTemplate.header("Host", myDomain); // 상대 서버가 내 도메인을 기대할 때
-                requestTemplate.header("Referer", myDomain); // 상대 서버가 Referer 확인할 때
+                requestTemplate.header("Host", myDomain);
+                requestTemplate.header("Referer", myDomain);
                 requestTemplate.header("Origin", myDomain);
             }
         };
+    }
+
+    @Bean
+    public StringHttpMessageConverter feignStringHttpMessageConverter() {
+        return new StringHttpMessageConverter(Charset.forName("EUC-KR"));
     }
 
     @Bean
