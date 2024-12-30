@@ -29,6 +29,6 @@ public class MessageController {
     }
 
     @GetMapping("/log")
-    @Operation(summary = "npro 로그")
+    @Operation(summary = "npro 상세 로그")
     public void getLogsNpro(@RequestParam("mIdx") Long mIdx, @RequestParam("mId") String mId) { nproMessageService.getLogs(mIdx, mId); }
 }

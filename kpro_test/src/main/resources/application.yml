@@ -25,6 +25,13 @@ spring:
             loggerLevel: full
             connectTimeout: 5000
             readTimeout: 5000
+      multipart:
+        enabled: true
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
 
 logging:
@@ -33,4 +40,8 @@ logging:
     feign: DEBUG
     org.springframework.cloud.openfeign: DEBUG
     kr.co.emfo.kpro_test.domain.api.client.KkoEmfoApiClient: DEBUG
+    kr.co.emfo.kpro_test.domain.api.client.EmfoApiClient: DEBUG
     org.springframework.web.client.RestTemplate: DEBUG
+
+server:
+  domain: http://mydomain.com
