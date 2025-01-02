@@ -6,6 +6,7 @@ import kr.co.emfo.kpro_test.domain.api.dto.NproApiRequest;
 import kr.co.emfo.kpro_test.domain.message.entity.Message;
 import kr.co.emfo.kpro_test.domain.message.entity.MessageLog;
 import kr.co.emfo.kpro_test.domain.message.entity.NproMessage;
+import kr.co.emfo.kpro_test.domain.message.entity.NproMessageLog;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -85,6 +86,19 @@ public class MessageConverter {
                 .imgUrl(logNode.get("img_url").asText())
                 .imgLink(logNode.get("img_link").asText())
                 .curState(logNode.get("cur_state").asText().charAt(0))
+                .build();
+    }
+
+    public static NproMessageLog toNproMessageLog(Long idx, JsonNode logNode) {
+
+        return NproMessageLog.builder()
+                .idx(idx)
+                .reqDate(logNode.get("REQ_DATE").asText())
+                .phone(logNode.get("PHONE").asText())
+                .callback(logNode.get("CALLBACK").asText())
+                .code(logNode.get("CODE").asText())
+                .net(logNode.get("NET").asText())
+                .type(logNode.get("TYPE").asText())
                 .build();
     }
 }

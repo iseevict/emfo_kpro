@@ -2,12 +2,14 @@ package kr.co.emfo.kpro_test.domain.message.service;
 
 import kr.co.emfo.kpro_test.global.response.code.resultCode.ErrorStatus;
 import kr.co.emfo.kpro_test.global.response.exception.handler.ServerHandler;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 @Component
+@Scope("prototype")
 public class QueueManager {
 
     private final BlockingQueue<Long> messageIdxQueue = new LinkedBlockingQueue<>();

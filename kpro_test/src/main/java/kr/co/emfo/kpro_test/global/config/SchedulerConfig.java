@@ -14,6 +14,7 @@ public class SchedulerConfig {
         scheduler.setPoolSize(4);
         scheduler.setThreadNamePrefix("ScheduledTask - ");
         scheduler.setWaitForTasksToCompleteOnShutdown(true);
+        scheduler.setAwaitTerminationSeconds(60);
         scheduler.initialize();
         return scheduler;
     }

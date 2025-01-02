@@ -37,14 +37,17 @@ spring:
     scheduling:
       pool:
         size: 5
+  mvc:
+    async:
+      request-timeout: 60000
 
 
 logging:
   level:
     root: INFO
-    #feign: DEBUG
-    #org.springframework.cloud.openfeign: DEBUG
-    #org.springframework.web.client.RestTemplate: DEBUG
+    feign: DEBUG
+    org.springframework.cloud.openfeign: DEBUG
+    org.springframework.web.client.RestTemplate: DEBUG
     org.hibernate.SQL: off
     org.hibernate.type: off
 
@@ -52,3 +55,4 @@ server:
   domain: http://mydomain.com
   username: emfoplus_kpro
   password: emfo!@0717
+  id: stpark0509

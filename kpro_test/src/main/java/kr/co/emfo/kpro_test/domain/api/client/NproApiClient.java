@@ -1,11 +1,11 @@
 package kr.co.emfo.kpro_test.domain.api.client;
 
-import kr.co.emfo.kpro_test.domain.api.dto.NproApiRequest;
 import kr.co.emfo.kpro_test.global.config.FeignClientConfig;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 
 @FeignClient(name = "NproApiClient", url = "http://emfohttp.co.kr", configuration = FeignClientConfig.class)
@@ -34,5 +34,6 @@ public interface NproApiClient {
                        @RequestPart("flag_merge") String flagMerge);
 
     @GetMapping("/result_log")
-    String getNproLog(NproApiRequest.NproLogRequestDto request);
+    String getNproLog(@RequestParam("m_idx") Long mIdx,
+                      @RequestParam("m_id") String mId);
 }

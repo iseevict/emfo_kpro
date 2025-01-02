@@ -8,5 +8,6 @@ import java.util.List;
 
 public interface NproMessageRepository extends JpaRepository<NproMessage, Long> {
 
+    Optional<List<NproMessage>> findTop1000ByState(String state);
     Optional<List<NproMessage>> findAllByState(String state);
 }

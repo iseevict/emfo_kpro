@@ -45,7 +45,7 @@ public class KproMessageService {
     private ExecutorService logPool;
 
     @Scheduled(fixedDelay = 10000)
-    public void pendingMessages() {
+    public void sendingKproMessages() {
 
         try {
 
@@ -54,13 +54,12 @@ public class KproMessageService {
             Character sending = '2'; // 메시지 전송 요청을 한 상태
             Character sendFail = '6'; // 메시지 전송이 실패한 상태
 
-            // 로그 확인을 하기 위해 요청을 한 idx를 저장해두는 큐
             List<KproApiRequest.SendKproMessageRequestDto> requestDtoList = new ArrayList<>();
 
             List<Message> messageList = messageRepository.findTop1000ByCurState(inDb)
                     .orElse(new ArrayList<>());
 
-            System.out.println("pendingMessages() is running... 총 개수 : " + messageList.size());
+            System.out.println("sendingKproMessages() is running... 총 개수 : " + messageList.size());
 
             // 요청 한 번에 1000개를 넘는 메시지 전송 시 예외 처리 -> 테스트 안함
             if (messageList.size() > 1000) {
@@ -71,7 +70,7 @@ public class KproMessageService {
             else if (!messageList.isEmpty()) {
 
                 StringBuilder sb = new StringBuilder();
-                sb.append("=========[유효성 검사 시작]========\n");
+                sb.append("=========[Kpro 유효성 검사 시작]========\n");
                 sb.append("유효성 검사 통과 실패 메시지 ID List: [ ");
                 for (Message message : messageList) {
 
@@ -91,7 +90,7 @@ public class KproMessageService {
                     }
                 }
                 sb.append("] \n");
-                sb.append("=========[유효성 검사 종료]========\n");
+                sb.append("=========[Kpro 유효성 검사 종료]========\n");
 
                 System.out.println(sb.toString());
 
@@ -138,15 +137,15 @@ public class KproMessageService {
     }
 
     @Scheduled(fixedDelay = 10000)
-    public void logCheckAndSave() {
+    public void kproLogCheckAndSave() {
 
-        if(!queueManager.isQueueEmpty()) {
+        if (!queueManager.isQueueEmpty()) {
 
             long startTime = System.currentTimeMillis();
             Character sending = '2'; // 메시지 전송 요청을 한 상태
             Character sendSuccess = '4'; // 성공적으로 메시지 전송이 완료된 상태
 
-            while(!queueManager.isQueueEmpty()) {
+            while (!queueManager.isQueueEmpty()) {
 
                 if (logPool == null || logPool.isShutdown() || logPool.isTerminated()) {
 
@@ -161,7 +160,7 @@ public class KproMessageService {
 
                         try {
 
-                            System.out.println("[Work] Thread Name : " + Thread.currentThread().getName());
+                            System.out.println("[Work] Kpro Thread Name: " + Thread.currentThread().getName());
 
                             if (!queueManager.isQueueEmpty()) {
 
@@ -178,7 +177,9 @@ public class KproMessageService {
                                     JsonNode logNode = logRootNode.get("logs");
 
                                     if (logNode != null && logNode.isArray()) {
+
                                         for (JsonNode currentLog : logNode) {
+
                                             String tempCurState = currentLog.get("cur_state").asText();
 
                                             if (tempCurState.equals(sendSuccess.toString())) {
@@ -206,7 +207,7 @@ public class KproMessageService {
                             throw new ServerHandler(ErrorStatus.THREAD_INTERRUPTED);
                         } finally {
 
-                            System.out.println("[Finish] Thread Name : " + Thread.currentThread().getName());
+                            System.out.println("[Finish] Kpro Thread Name : " + Thread.currentThread().getName());
                             latch.countDown();
                         }
                     });
@@ -229,7 +230,6 @@ public class KproMessageService {
             long totalTime = endTime - startTime;
             System.out.println("🔄 [Total Time] Processing completed in " + totalTime + " ms");
 
-            shutdown();
         }
     }
 
@@ -254,11 +254,12 @@ public class KproMessageService {
 
     @Transactional
     public void saveMessageLog(JsonNode logs) {
+
         try {
             ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
 
             System.out.println("전송 및 로그 작성 완료.");
-            System.out.println("[MessageLog] : " + writer.writeValueAsString(logs));
+            System.out.println("[KproMessageLog]: " + writer.writeValueAsString(logs));
             MessageLog messageLog = MessageConverter.toMessageLog(logs);
 
             messageLogRepository.save(messageLog);
@@ -284,11 +285,5 @@ public class KproMessageService {
                 .orElse(new ArrayList<>());
 
         messageRepository.deleteAll(messageList);
-    }
-
-    @PreDestroy
-    public void shutdown() {
-        logPool.shutdownNow();
-        System.out.println("LogPool safely shutdown");
     }
 }

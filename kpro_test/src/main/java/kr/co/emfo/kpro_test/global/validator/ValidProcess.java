@@ -1,6 +1,7 @@
 package kr.co.emfo.kpro_test.global.validator;
 
 import kr.co.emfo.kpro_test.domain.api.dto.KproApiRequest;
+import kr.co.emfo.kpro_test.domain.api.dto.NproApiRequest;
 import kr.co.emfo.kpro_test.global.response.code.resultCode.ErrorStatus;
 import kr.co.emfo.kpro_test.global.response.exception.handler.ValidateHandler;
 import org.springframework.stereotype.Component;
@@ -15,15 +16,7 @@ public class ValidProcess {
 
             throw new ValidateHandler(ErrorStatus.PHONE_NOT_NULL);
         }
-
-        else if (request.getPhone().matches("\\d+")) {
-
-            if (request.getPhone().length() > 12) {
-
-                throw new ValidateHandler(ErrorStatus.PHONE_MAX_LEN);
-            }
-        }
-        else {
+        else if (!request.getPhone().matches("\\d+")) {
 
             throw new ValidateHandler(ErrorStatus.PHONE_ONLY_NUM);
         }
@@ -54,6 +47,29 @@ public class ValidProcess {
         if (request.getSmsType() == null) {
 
             throw new ValidateHandler(ErrorStatus.SMSTYPE_NOT_NULL);
+        }
+    }
+
+    public void validateNproRequestDto (NproApiRequest.SendNproMessageRequestDto request) {
+
+        // callTo 유효성 검사
+        if (request.getCallTo() == null) {
+
+            throw new ValidateHandler(ErrorStatus.PHONE_NOT_NULL);
+        }
+        else if (!request.getCallTo().matches("\\d+")) {
+
+            throw new ValidateHandler(ErrorStatus.PHONE_ONLY_NUM);
+        }
+
+        // callFrom 유효성 검사
+        if (request.getCallFrom() == null) {
+
+            throw new ValidateHandler(ErrorStatus.PHONE_NOT_NULL);
+        }
+        else if (!request.getCallFrom().matches("\\d+")) {
+
+            throw new ValidateHandler(ErrorStatus.PHONE_ONLY_NUM);
         }
     }
 }
