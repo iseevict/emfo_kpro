@@ -35,9 +35,10 @@ public class Message {
 
     private LocalDateTime reqDate;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     private String sendMsg;
 
+    @Column(nullable = false)
     private Character curState;
 
     @Column(nullable = false)

@@ -21,7 +21,6 @@ import java.time.LocalDateTime;
 public class MessageLog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idx;
 
     @Column(nullable = false)
@@ -39,9 +38,10 @@ public class MessageLog {
 
     private LocalDateTime rsltDate;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     private String sendMsg;
 
+    @Column(nullable = false)
     private Character curState;
 
     @Column(nullable = false)

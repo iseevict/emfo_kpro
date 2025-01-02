@@ -8,12 +8,13 @@ spring:
     init:
       mode: never
   jpa:
+    show-sql: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
-        show_sql: true
-        format_sql: true
-        use_sql_comments: true
+        show_sql: false
+        format_sql: false
+        use_sql_comments: false
         hbm2ddl:
           auto: create
         default_batch_fetch_size: 1000
@@ -32,16 +33,20 @@ spring:
       charset: UTF-8
       enabled: true
       force: true
+  task:
+    scheduling:
+      pool:
+        size: 5
 
 
 logging:
   level:
     root: INFO
-    feign: DEBUG
-    org.springframework.cloud.openfeign: DEBUG
-    kr.co.emfo.kpro_test.domain.api.client.KkoEmfoApiClient: DEBUG
-    kr.co.emfo.kpro_test.domain.api.client.EmfoApiClient: DEBUG
-    org.springframework.web.client.RestTemplate: DEBUG
+    #feign: DEBUG
+    #org.springframework.cloud.openfeign: DEBUG
+    #org.springframework.web.client.RestTemplate: DEBUG
+    org.hibernate.SQL: off
+    org.hibernate.type: off
 
 server:
   domain: http://mydomain.com

@@ -38,7 +38,7 @@ public class MessageConverter {
                 .build();
     }
 
-    public static KproApiRequest.SendKproMessageRequestDto toSendMessageDto(Message message) {
+    public static KproApiRequest.SendKproMessageRequestDto toSendKproMessageDto(Message message) {
 
         return KproApiRequest.SendKproMessageRequestDto.builder()
                 .callback(message.getCallback())
@@ -53,7 +53,6 @@ public class MessageConverter {
                 .attachmentUrl(message.getAttachmentUrl())
                 .imgUrl(message.getImgUrl())
                 .imgLink(message.getImgLink())
-                .curState(message.getCurState())
                 .build();
     }
 

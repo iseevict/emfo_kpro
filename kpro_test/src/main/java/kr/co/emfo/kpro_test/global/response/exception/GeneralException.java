@@ -6,10 +6,15 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
-@AllArgsConstructor
 public class GeneralException extends RuntimeException {
 
     private BaseErrorCode errorCode;
+
+    public GeneralException(BaseErrorCode errorCode) {
+
+        super(errorCode.getReason().getMessage());
+        this.errorCode = errorCode;
+    }
 
     public ErrorReasonDTO getErrorReason() {
         return this.errorCode.getReason();

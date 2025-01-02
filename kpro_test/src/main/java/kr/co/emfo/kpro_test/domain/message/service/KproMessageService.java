@@ -3,6 +3,9 @@ package kr.co.emfo.kpro_test.domain.message.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import feign.FeignException;
+import jakarta.annotation.PreDestroy;
 import kr.co.emfo.kpro_test.domain.api.client.KproApiClient;
 import kr.co.emfo.kpro_test.domain.api.dto.KproApiRequest;
 import kr.co.emfo.kpro_test.domain.message.converter.MessageConverter;
@@ -10,123 +13,282 @@ import kr.co.emfo.kpro_test.domain.message.entity.Message;
 import kr.co.emfo.kpro_test.domain.message.entity.MessageLog;
 import kr.co.emfo.kpro_test.domain.message.repository.MessageLogRepository;
 import kr.co.emfo.kpro_test.domain.message.repository.MessageRepository;
+import kr.co.emfo.kpro_test.global.response.code.resultCode.ErrorStatus;
+import kr.co.emfo.kpro_test.global.response.exception.handler.DataHandler;
+import kr.co.emfo.kpro_test.global.response.exception.handler.ServerHandler;
+import kr.co.emfo.kpro_test.global.validator.ValidProcess;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class KproMessageService {
 
     private final MessageRepository messageRepository;
     private final MessageLogRepository messageLogRepository;
+    private final ValidProcess validProcess;
+    private final QueueManager queueManager;
 
-    @Autowired
     private final KproApiClient kproApiClient;
-    @Autowired
     private final ObjectMapper objectMapper;
 
+    private ExecutorService logPool;
+
     @Scheduled(fixedDelay = 10000)
-    @Transactional
     public void pendingMessages() {
-        List<Message> messageList = messageRepository.findAllByCurState('F')
-                .orElse(new ArrayList<>());
-        for (Message message : messageList) {
-            try {
-                message.updateCurState('0');
-                messageRepository.saveAndFlush(message);
 
-                // message -> requestDto 변환
-                KproApiRequest.SendKproMessageRequestDto request = MessageConverter.toSendMessageDto(message);
+        try {
 
-                List<KproApiRequest.SendKproMessageRequestDto> requestList = new ArrayList<>();
-                requestList.add(request);
+            Character inDb = 'F'; // DB에 Insert 한 상태
+            Character readData = '0'; // DB에서 Select 한 상태
+            Character sending = '2'; // 메시지 전송 요청을 한 상태
+            Character sendFail = '6'; // 메시지 전송이 실패한 상태
 
-                String response = kproApiClient.sendKproMessage(requestList);
+            // 로그 확인을 하기 위해 요청을 한 idx를 저장해두는 큐
+            List<KproApiRequest.SendKproMessageRequestDto> requestDtoList = new ArrayList<>();
 
-                message.updateCurState('2');
-                messageRepository.saveAndFlush(message);
+            List<Message> messageList = messageRepository.findTop1000ByCurState(inDb)
+                    .orElse(new ArrayList<>());
 
-                JsonNode rootNode = objectMapper.readTree(response);
-                JsonNode results = rootNode.get("messages");
-                if (results != null && results.isArray()) {
-                    for (JsonNode resultNode : results) {
+            System.out.println("pendingMessages() is running... 총 개수 : " + messageList.size());
 
-                        Long idx = resultNode.get("idx").asLong();
-                        String log = "";
-                        int i = 1;
+            // 요청 한 번에 1000개를 넘는 메시지 전송 시 예외 처리 -> 테스트 안함
+            if (messageList.size() > 1000) {
 
-                        loop:
-                        while(i < 2) {
+                updateCurStateAndSaveForAll(sendFail, messageList);
+                throw new DataHandler(ErrorStatus.ONE_REQUEST_MAX_1000);
+            }
+            else if (!messageList.isEmpty()) {
 
-                            String tempLog = getLog(idx);
+                StringBuilder sb = new StringBuilder();
+                sb.append("=========[유효성 검사 시작]========\n");
+                sb.append("유효성 검사 통과 실패 메시지 ID List: [ ");
+                for (Message message : messageList) {
 
-                            JsonNode tempRootNode = objectMapper.readTree(tempLog);
-                            JsonNode tempLogNodes = tempRootNode.get("logs");
+                    try {
 
-                            if (tempLogNodes != null && tempLogNodes.isArray()) {
-                                for (JsonNode tempLogNode : tempLogNodes) {
-                                    String tempCurState = tempLogNode.get("cur_state").asText();
-                                    System.out.println("cs : " + tempCurState);
+                        KproApiRequest.SendKproMessageRequestDto requestDto = MessageConverter.toSendKproMessageDto(message);
+                        validProcess.validateKproRequestDto(requestDto); // 유효성 검사
+                        requestDtoList.add(requestDto);
 
-                                    if (tempCurState.equals("4")) {
-                                        log = tempLog;
-                                        System.out.println(log);
-                                        break loop;
-                                    }
-                                }
-                            }
+                        updateCurStateAndSave(readData, message);
+                    } catch (Exception e) {
 
-                            Thread.sleep(5000);
-                        }
+                        updateCurStateAndSave(sendFail, message);
+                        sb.append(message.getId() + " ");
+                        System.err.println("message.id['" + message.getId() + "'] request Fail.");
+                        System.err.println("Validation Error: " + e.getMessage());
+                    }
+                }
+                sb.append("] \n");
+                sb.append("=========[유효성 검사 종료]========\n");
 
-                        MessageLog saveLog = saveLog(log);
+                System.out.println(sb.toString());
 
-                        messageLogRepository.save(saveLog);
+                String response = kproApiClient.sendKproMessage(requestDtoList);
+
+                JsonNode requestSendingMessageResponseRootNode = objectMapper.readTree(response);
+                JsonNode resultListNode = requestSendingMessageResponseRootNode.get("messages");
+
+                ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
+
+                System.out.println("전송 실패 건 제외 나머지 건 전송 요청 성공.");
+                System.out.println("[Response] : " + writer.writeValueAsString(requestSendingMessageResponseRootNode));
+
+                if (resultListNode != null && resultListNode.isArray()) {
+
+                    for (JsonNode result : resultListNode) {
+
+                        Long idx = result.get("idx").asLong();
+                        queueManager.addToQueue(idx);
                     }
                 }
 
+                for (Message message : getMessageList(messageList)) {
 
-            } catch (Exception e) {
-                message.updateCurState('6');
-            } finally {
-                messageRepository.saveAndFlush(message);
-                List<Message> deleteMessageList = messageRepository.findAllByCurState('2')
-                        .orElse(new ArrayList<>());
+                    if (!message.getCurState().equals('6')) {
 
-                messageRepository.deleteAll(deleteMessageList);
+                        updateCurStateAndSave(sending, message);
+                    }
+                }
             }
+
+        } catch (JsonProcessingException e) {
+
+            throw new ServerHandler(ErrorStatus.JSON_PARSING_EXCEPTION);
+        } catch (FeignException e) {
+
+            System.err.println("Feign Error: " + e);
+        }
+
+    }
+
+    private static List<Message> getMessageList(List<Message> messageList) {
+        return messageList;
+    }
+
+    @Scheduled(fixedDelay = 10000)
+    public void logCheckAndSave() {
+
+        if(!queueManager.isQueueEmpty()) {
+
+            long startTime = System.currentTimeMillis();
+            Character sending = '2'; // 메시지 전송 요청을 한 상태
+            Character sendSuccess = '4'; // 성공적으로 메시지 전송이 완료된 상태
+
+            while(!queueManager.isQueueEmpty()) {
+
+                if (logPool == null || logPool.isShutdown() || logPool.isTerminated()) {
+
+                    logPool = Executors.newFixedThreadPool(3);
+                }
+
+                CountDownLatch latch = new CountDownLatch(3);
+
+                for (int i = 0; i < 3; i++) {
+
+                    logPool.submit(() -> {
+
+                        try {
+
+                            System.out.println("[Work] Thread Name : " + Thread.currentThread().getName());
+
+                            if (!queueManager.isQueueEmpty()) {
+
+                                Long currentIdx = queueManager.getIdxFromQueue();
+                                boolean sendingMessageComplete = false;
+
+                                System.out.println("[" + Thread.currentThread().getName() + "] IDX - " + currentIdx + " is logging..");
+
+                                while(!sendingMessageComplete) {
+
+                                    String log = getLog(currentIdx);
+
+                                    JsonNode logRootNode = objectMapper.readTree(log);
+                                    JsonNode logNode = logRootNode.get("logs");
+
+                                    if (logNode != null && logNode.isArray()) {
+                                        for (JsonNode currentLog : logNode) {
+                                            String tempCurState = currentLog.get("cur_state").asText();
+
+                                            if (tempCurState.equals(sendSuccess.toString())) {
+
+                                                System.out.println("IDX['" + currentIdx + "'] Processing Complete");
+                                                sendingMessageComplete = true;
+
+                                                saveMessageLog(currentLog);
+                                            }
+                                        }
+                                    }
+
+                                    if (!sendingMessageComplete) {
+
+                                        Thread.sleep(5000);
+                                    }
+                                }
+                            }
+                        } catch (JsonProcessingException e) {
+
+                            throw new ServerHandler(ErrorStatus.JSON_PARSING_EXCEPTION);
+                        } catch (InterruptedException e) {
+
+                            Thread.currentThread().interrupt();
+                            throw new ServerHandler(ErrorStatus.THREAD_INTERRUPTED);
+                        } finally {
+
+                            System.out.println("[Finish] Thread Name : " + Thread.currentThread().getName());
+                            latch.countDown();
+                        }
+                    });
+                }
+
+                try {
+
+                    latch.await();
+                } catch (InterruptedException e) {
+
+                    Thread.currentThread().interrupt();
+                    System.err.println("[Error] Latch interrupted while waiting.");
+                }
+            }
+
+            // 로깅 완료 후 전송 성공한 Message Data Delete
+            deleteSentMessage(sending);
+
+            long endTime = System.currentTimeMillis();
+            long totalTime = endTime - startTime;
+            System.out.println("🔄 [Total Time] Processing completed in " + totalTime + " ms");
+
+            shutdown();
         }
     }
 
-    public MessageLog saveLog(String response) throws JsonProcessingException {
+    @Transactional
+    private void updateCurStateAndSave(Character status, Message message) {
 
-        JsonNode rootNode = objectMapper.readTree(response);
-        JsonNode logs = rootNode.get("logs");
+        message.updateCurState(status);
+        messageRepository.saveAndFlush(message);
+    }
 
-        MessageLog messageLog = new MessageLog();
+    @Transactional
+    private void updateCurStateAndSaveForAll(Character status, List<Message> messageList) {
 
-        if (logs != null && logs.isArray()) messageLog = MessageConverter.toMessageLog(logs.get(0));
+        for (Message message : messageList) {
 
+            message.updateCurState(status);
+            messageRepository.save(message);
+        }
 
-        return messageLog;
+        messageRepository.flush();
+    }
+
+    @Transactional
+    public void saveMessageLog(JsonNode logs) {
+        try {
+            ObjectWriter writer = objectMapper.writerWithDefaultPrettyPrinter();
+
+            System.out.println("전송 및 로그 작성 완료.");
+            System.out.println("[MessageLog] : " + writer.writeValueAsString(logs));
+            MessageLog messageLog = MessageConverter.toMessageLog(logs);
+
+            messageLogRepository.save(messageLog);
+        } catch (JsonProcessingException e) {
+
+            throw new ServerHandler(ErrorStatus.JSON_PARSING_EXCEPTION);
+        }
     }
 
     public String getLog(Long i) {
-        String logs = kproApiClient.getKproLog(i);
-        System.out.println(logs);
 
-        return logs;
+        return kproApiClient.getKproLog(i);
     }
 
     public void getLogs() {
         String logs = kproApiClient.getKproLogs();
         System.out.println(logs);
+    }
+
+    private void deleteSentMessage(Character currentState) {
+
+        List<Message> messageList = messageRepository.findAllByCurState(currentState)
+                .orElse(new ArrayList<>());
+
+        messageRepository.deleteAll(messageList);
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        logPool.shutdownNow();
+        System.out.println("LogPool safely shutdown");
     }
 }
