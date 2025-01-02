@@ -50,3 +50,5 @@ logging:
 
 server:
   domain: http://mydomain.com
+  username: emfoplus_kpro
+  password: emfo!@0717

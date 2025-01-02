@@ -15,14 +15,18 @@ public class FeignClientConfig {
 
     @Value("${server.domain}")
     private String myDomain;
+    @Value("${server.username}")
+    private String usernameP;
+    @Value("${server.password}")
+    private String passwordP;
 
     @Bean
     public RequestInterceptor requestInterceptor() {
 
         return requestTemplate -> {
             if (!requestTemplate.url().contains("/send/send.emfo")) { // Kpro 용
-                String username = "emfoplus_kpro";
-                String password = "emfo!@0717";
+                String username = usernameP;
+                String password = passwordP;
                 String credentials = username + ":" + password;
                 String authHeader = "Basic " + Base64.getMimeEncoder()
                         .encodeToString(credentials.getBytes());
