@@ -50,8 +50,8 @@ public class FeignClientConfig {
         return new StringHttpMessageConverter(Charset.forName("EUC-KR"));
     }
 
-    @Bean
+    /*@Bean
     Logger.Level feignLoggerLevel() {
         return Logger.Level.FULL; // 모든 요청 및 응답을 상세 출력
-    }
+    }*/
 }

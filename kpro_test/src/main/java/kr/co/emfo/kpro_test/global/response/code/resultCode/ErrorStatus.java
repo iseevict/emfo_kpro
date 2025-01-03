@@ -32,6 +32,8 @@ public enum ErrorStatus implements BaseErrorCode {
     // Data(DB)
     ONE_REQUEST_MAX_1000(HttpStatus.TOO_MANY_REQUESTS, "DATA404", "Max 1000 messages can be sent at one request"),
 
+    NPRO_BAD_REQUEST(HttpStatus.BAD_REQUEST, "DATA405", "비정상 요청입니다."),
+
     ;
 
     private final HttpStatus httpStatus;

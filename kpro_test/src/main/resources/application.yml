@@ -45,9 +45,9 @@ spring:
 logging:
   level:
     root: INFO
-    feign: DEBUG
-    org.springframework.cloud.openfeign: DEBUG
-    org.springframework.web.client.RestTemplate: DEBUG
+    #feign: DEBUG
+    #org.springframework.cloud.openfeign: DEBUG
+    #org.springframework.web.client.RestTemplate: DEBUG
     org.hibernate.SQL: off
     org.hibernate.type: off
 
